@@ -45,7 +45,7 @@ func RouterInit() *fiber.App {
 	{
 		teacher.Post("/add", handle.AddTopic)
 		teacher.Post("/search", handle.SearchMyTopic)
-		teacher.Post("/delete", handle.DeleteTopic)
+		teacher.Get("/delete", handle.DeleteTopic)
 		teacher.Post("/edit", handle.UpdateTopic)
 	}
 	return app

@@ -8,6 +8,7 @@ import {
   Delete,
   Edit,
 } from '@element-plus/icons-vue'
+import {TeacherAddTopic, TeacherDeleteTopic, TeacherEditTopic} from "../api/teacher.ts";
 const vueRouter = useRouter();
 
 const logout = () => {
@@ -78,10 +79,56 @@ let topic = reactive(<Topic>{})
 const EditTopic = (row) => {
   dialogVisible.value = true
   topic = row
+  isEdit = true
+}
+
+const DeleteTopic = (id:number) => {
+  TeacherDeleteTopic(id).then(res=>{
+    if (res.status !== 200) {
+      ElMessage.error(res.data)
+    } else {
+      ElMessage.success("删除成功！")
+      topicListResp.value.data.topicList = topicListResp.value.data.topicList.filter((item: Topic) => {
+        return item.ID !== id;
+      });
+    }
+  })
+}
+
+let isEdit = true
+
+const sub = () => {
+  if (isEdit) {
+    dialogVisible.value = false
+    TeacherEditTopic(topic).then(res=>{
+      if (res.status !== 200) {
+        ElMessage.error(res.data)
+      }else {
+        ElMessage.success("修改成功！")
+      }
+    })
+  } else {
+    TeacherAddTopic(topic).then(res=>{
+      if (res.status !== 200) {
+        ElMessage.error(res.data)
+      }else {
+        ElMessage.success("添加成功！")
+        topicListResp.value.data.topicList.push(topic)
+        topic =  reactive(<Topic>{})
+        dialogVisible.value = false
+      }
+    })
+  }
+}
+
+
+const AddTopic = () => {
+  topic =  reactive(<Topic>{})
+  dialogVisible.value = true
+  isEdit = false
 }
 
 const dialogVisible = ref(false)
-
 
 </script>
 
@@ -90,7 +137,8 @@ const dialogVisible = ref(false)
     <div class="top">
       <div class="left">
         <p>欢迎：<span style="color: aqua">{{user.user_name}}</span> {{user.type?"老师":"同学"}}
-          <a @click.prevent="logout" style="cursor: pointer">退出</a></p>
+          <a @click.prevent="logout" style="cursor: pointer">退出</a> &nbsp;
+          <a @click.prevent="AddTopic" style="cursor: pointer" v-if="user.type">添加论文题目</a></p>
       </div>
     </div>
     <div class="info" v-if="!user.type">
@@ -136,12 +184,12 @@ const dialogVisible = ref(false)
           <template #default="scope">
             <el-button type="success" :icon="Check" circle @click="Select(scope.row.ID)"  v-if="!user.type"/>
             <el-button type="primary" :icon="Edit" circle @click="EditTopic(scope.row)"  v-if="user.type"/>
-            <el-button type="danger" :icon="Delete" circle  v-if="user.type" />
+            <el-button type="danger" :icon="Delete" @click="DeleteTopic(scope.row.ID)" circle  v-if="user.type" />
 
           </template>
         </el-table-column>
       </el-table>
-      <el-dialog v-model="dialogVisible" title="Tips" width="500" draggable>
+      <el-dialog v-model="dialogVisible" title="内容修改" width="500" draggable>
         <template #footer>
           <el-form
               label-position="left"
@@ -181,10 +229,8 @@ const dialogVisible = ref(false)
             </el-form-item>
           </el-form>
           <div class="dialog-footer">
-            <el-button @click="dialogVisible = false">Cancel</el-button>
-            <el-button type="primary" @click="dialogVisible = false">
-              Confirm
-            </el-button>
+            <el-button @click="dialogVisible = false">取消</el-button>
+            <el-button type="primary" @click="sub()">提交</el-button>
           </div>
         </template>
       </el-dialog>
