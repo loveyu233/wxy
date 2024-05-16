@@ -1,45 +1,34 @@
 package handle
 
 import (
-	"TopicSelection/dao"
-	"TopicSelection/model"
-	"TopicSelection/util"
-	"fmt"
 	"github.com/gofiber/fiber/v2"
+	"server/dao"
+	"server/model"
+	"server/util"
 )
 
 // Select 选择论文
 func Select(c *fiber.Ctx) error {
-	type Req struct {
-		ID uint `json:"id"`
-	}
-	var req Req
-	if err := c.BodyParser(&req); err != nil {
-		return util.Resp400(c, "参数绑定失败")
-	}
+	id := c.Query("id")
 	uid, st := c.Locals("userId").(string)
 	if !st {
 		return util.Resp400(c, "类型断言失败")
 	}
-	tx := dao.DB.Model(model.Topic{}).Begin()
-	defer func() {
-		if r := recover(); r != nil {
-			tx.Rollback()
-		}
-	}()
-	dao.DB.Clauses()
+
+	var count int64
+	dao.DB.Model(&model.Topic{}).Debug().Where("student_id = ?", uid).Count(&count)
+
+	if count > 0 {
+		return util.Resp400(c, "已选取不可重复选择")
+	}
+
 	if err := dao.DB.Table("topics").
-		Where("id=?", req.ID).
+		Where("id=?", id).
 		UpdateColumn("student_id", uid).
 		Error; err != nil {
-		tx.Rollback()
 		return util.Resp400(c, "选择失败")
 	}
 
-	if err := tx.Commit().Error; err != nil {
-		tx.Rollback()
-		return fmt.Errorf("数据库提交失败 ：%v", err)
-	}
 	return util.Resp200(c, "选择成功")
 }
 
@@ -57,10 +46,16 @@ func ShowTopic(c *fiber.Ctx) error {
 		req   Req
 	)
 	c.BodyParser(&req)
+	if req.PageNum == 0 {
+		req.PageNum = 1
+	}
+	if req.PageSize == 0 {
+		req.PageSize = 20
+	}
 	tx1 := dao.DB.Model(&model.Topic{}).
-		Where("student_id = ? and deleted_at is NULL", "")
+		Where("is_select = false and deleted_at is NULL")
 	tx2 := dao.DB.Model(model.Topic{}).
-		Where("student_id = ? and deleted_at is NULL", "")
+		Where("is_select = false and deleted_at is NULL")
 	if err = tx1.
 		Offset(int((req.PageNum - 1) * req.PageSize)).Limit(int(req.PageSize)).
 		Find(&topic).Error; err != nil {
@@ -80,12 +75,12 @@ func MyTopic(c *fiber.Ctx) error {
 		return util.Resp400(c, "类型断言失败")
 	}
 	var (
-		topic model.Topic
+		topic []*model.Topic
 		err   error
 	)
 	if err = dao.DB.Model(model.Topic{}).
-		Where("student_id=? and deleted_at is not NULL", uid).
-		First(&topic).Error; err != nil {
+		Where("student_id=? and deleted_at is NULL", uid).
+		Find(&topic).Error; err != nil {
 		return util.Resp200(c, "未选择论文")
 	}
 
@@ -96,7 +91,7 @@ func Cancel(c *fiber.Ctx) error {
 	id := c.Query("id")
 
 	if err := dao.DB.Model(model.Topic{}).
-		Where("id=? and deleted_at is not NULL", id).
+		Where("id=? and deleted_at is NULL", id).
 		UpdateColumn("student_id", nil).Error; err != nil {
 		return util.Resp400(c, "取消失败")
 	}

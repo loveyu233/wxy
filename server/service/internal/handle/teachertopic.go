@@ -1,10 +1,10 @@
 package handle
 
 import (
-	"TopicSelection/dao"
-	"TopicSelection/model"
-	"TopicSelection/util"
 	"github.com/gofiber/fiber/v2"
+	"server/dao"
+	"server/model"
+	"server/util"
 )
 
 // AddTopic 教师操作 增加论文

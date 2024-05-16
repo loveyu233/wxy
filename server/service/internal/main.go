@@ -1,12 +1,12 @@
 package main
 
 import (
-	"TopicSelection/dao"
-	"TopicSelection/model"
-	"TopicSelection/service/internal/api"
 	"context"
 	"github.com/sirupsen/logrus"
 	"os/signal"
+	"server/dao"
+	"server/model"
+	"server/service/internal/api"
 	"syscall"
 )
 
@@ -30,7 +30,7 @@ func main() {
 	AutoMigrate()
 	go func() {
 		app := api.RouterInit()
-		listenHttpErrChan <- app.Listen(":8433")
+		listenHttpErrChan <- app.Listen("127.0.0.1:8433")
 	}()
 	select {
 	case err := <-listenHttpErrChan:

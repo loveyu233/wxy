@@ -1,10 +1,10 @@
 package api
 
 import (
-	"TopicSelection/service/internal/handle"
-	"TopicSelection/util"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/logger"
+	"server/service/internal/handle"
+	"server/util"
 )
 
 func Cors() fiber.Handler {
@@ -28,23 +28,25 @@ func RouterInit() *fiber.App {
 	app.Use(Cors())
 	app.Use(logger.New())
 
-	app.Post("/login", handle.UserLogin)
-	app.Post("/update/password", util.JWTMiddleware(), handle.UpdatePassword)
+	apiGroup := app.Group("/api")
+	apiGroup.Post("/login", handle.UserLogin)
+	apiGroup.Get("/verify", handle.Verify())
+	apiGroup.Post("/update/password", util.JWTMiddleware(), handle.UpdatePassword)
 
-	stu := app.Group("/student", util.JWTMiddleware())
+	stu := apiGroup.Group("/student", util.JWTMiddleware())
 	{
-		stu.Post("/select", handle.Select)
+		stu.Get("/select", handle.Select)
 		stu.Post("/show", handle.ShowTopic)
-		stu.Post("mytopic", handle.MyTopic)
-		stu.Post("/cancel", handle.Cancel)
+		stu.Get("/info", handle.MyTopic)
+		stu.Get("/cancel", handle.Cancel)
 	}
 
-	teacher := app.Group("/teacher", util.JWTMiddleware())
+	teacher := apiGroup.Group("/teacher", util.JWTMiddleware())
 	{
-		teacher.Post("addtopic", handle.AddTopic)
-		teacher.Post("searchMyTopic", handle.SearchMyTopic)
-		teacher.Post("deleteTopic", handle.DeleteTopic)
-		teacher.Post("updateTopic", handle.UpdateTopic)
+		teacher.Post("/add", handle.AddTopic)
+		teacher.Post("/search", handle.SearchMyTopic)
+		teacher.Post("/delete", handle.DeleteTopic)
+		teacher.Post("/edit", handle.UpdateTopic)
 	}
 	return app
 }

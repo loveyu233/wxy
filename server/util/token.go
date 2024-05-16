@@ -11,7 +11,7 @@ import (
 type Claims struct {
 	UserId   string `json:"userId"`
 	UserName string `json:"userName"`
-	Type     string `json:"type"`
+	Type     bool   `json:"type"`
 	jwt.RegisteredClaims
 }
 
@@ -19,7 +19,7 @@ type Claims struct {
 var mySecret = []byte("cuicui")
 
 // GenToken 生成 Token
-func GenToken(userid, username, utype string) (string, error) {
+func GenToken(userid, username string, utype bool) (string, error) {
 	c := Claims{
 		UserId:   userid,
 		UserName: username,
@@ -40,7 +40,7 @@ func GenToken(userid, username, utype string) (string, error) {
 	return tokenStr, nil
 }
 
-func GetPayload(token string) (string, string, string, error) {
+func GetPayload(token string) (string, string, bool, error) {
 	parser := jwt.NewParser()
 	var claims Claims
 	_, _, err := parser.ParseUnverified(token, &claims)

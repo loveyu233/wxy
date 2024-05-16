@@ -68,13 +68,13 @@ request.interceptors.response.use((res) => {
 });
 
 
-// request.interceptors.request.use((config) => {
-//     let token = GET_TOKEN();
-//     if (token) {
-//         config.headers.token = token;
-//     }
-//     return config;
-// });
+request.interceptors.request.use((config) => {
+    let token = localStorage.getItem("token");
+    if (token) {
+        config.headers.Authorization = token;
+    }
+    return config;
+});
 
 
 export default request;

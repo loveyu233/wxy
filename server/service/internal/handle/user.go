@@ -1,14 +1,14 @@
 package handle
 
 import (
-	"TopicSelection/bcrypt"
-	"TopicSelection/dao"
-	"TopicSelection/model"
-	"TopicSelection/util"
 	"errors"
 	"fmt"
 	"github.com/gofiber/fiber/v2"
 	"github.com/sirupsen/logrus"
+	"server/bcrypt"
+	"server/dao"
+	"server/model"
+	"server/util"
 )
 
 // UserLogin 登录逻辑函数
@@ -29,15 +29,9 @@ func UserLogin(c *fiber.Ctx) error {
 	if err != nil {
 		return util.Resp400(c, "查询失败")
 	}
-	if user.PassWord == "123456" {
-		token, err := util.GenToken(user.UserId, user.UserName, user.Type)
-		if err != nil {
-			return util.Resp400(c, fmt.Errorf("生成token失败：%v", err))
-		}
-		return util.Resp200(c, token)
-	}
+
 	// 验证密码是否正确
-	if !bcrypt.ComparePasswords(req.PassWord, user.PassWord) {
+	if req.PassWord != user.PassWord {
 		return util.Resp400(c, "密码错误")
 	}
 
@@ -53,6 +47,19 @@ func UserLogin(c *fiber.Ctx) error {
 		"token": token,
 		"info":  user,
 	})
+}
+
+func Verify() fiber.Handler {
+	return func(c *fiber.Ctx) error {
+		token := c.Get("token")
+		if token == "" {
+			return util.Resp401(c, "")
+		}
+		if err := util.VerifyToken(token); err != nil {
+			return util.Resp401(c, err)
+		}
+		return util.Resp200(c, "")
+	}
 }
 
 // UpdatePassword 修改密码

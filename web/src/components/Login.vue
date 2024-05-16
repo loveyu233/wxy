@@ -1,10 +1,37 @@
 <script setup lang="ts">
 import {onMounted, reactive, ref} from "vue";
 import {getRandom} from "../api/random.ts";
-import {FormInstance, FormProps} from "element-plus";
+import {FormInstance, FormProps, FormRules} from "element-plus";
 import {UserLoginReq} from "../custom_type/user.ts";
 import {loginReq} from "../api/user.ts";
 import {useRouter} from "vue-router";
+
+const checkUserID = (_:any, value: any, callback: any) => {
+  if (!value) {
+    return callback(new Error('学号必须填写'))
+  }
+  setTimeout(() => {
+    if (!Number.isInteger(value)) {
+      callback(new Error('输入数字'))
+    } else {
+      if (value < 100000 || value > 1000000) {
+        callback(new Error('学号必须为6位数字'))
+      } else {
+        callback()
+      }
+    }
+  }, 100)
+}
+
+const rules = reactive<FormRules>({
+  password: [
+    { required: true, message: '密码必须填写' },
+    {min:6,max:10,message: '密码最短6位，最长10位'}],
+  user_id: [
+    { required: true, message: '学号必须填写' },
+    { type: 'number', message: '学号必须是纯数字' },
+    {validator:checkUserID}],
+})
 
 const vueRouter = useRouter();
 
@@ -14,7 +41,7 @@ let image = reactive({
 })
 
 onMounted( ()=>{
-  let token = localStorage.key("token")
+  let token = localStorage.getItem("token")
   if (token) {
     ElMessage.info("已登陆，需要重新登录请先退出")
     vueRouter.replace("/")
@@ -34,20 +61,20 @@ const clickLogin = (formEl: FormInstance | undefined) => {
   formEl?.validate((v)=>{
     if (v){
       loginReq(user).then(res=>{
-        console.log(user)
-        console.log(res)
+        console.log("user: ",res)
         if(res.status !== 200) {
           ElMessage.error('账号或密码错误')
         } else {
           ElMessage.success("登陆成功")
-          localStorage.setItem("token",res.data)
+          var s = JSON.stringify(res.data.info);
+          localStorage.setItem("info",s)
+          localStorage.setItem("token",res.data.token)
           vueRouter.replace("/")
         }
       })
     }
   })
 }
-
 </script>
 
 <template>
@@ -59,14 +86,11 @@ const clickLogin = (formEl: FormInstance | undefined) => {
           label-width="auto"
           :model="user"
           style="max-width: 600px"
+          :rules="rules"
       >
         <el-form-item
-            label="user_id"
+            label="学号"
             prop="user_id"
-            :rules="[
-        { required: true, message: 'age is required' },
-        { type: 'number', message: 'age must be a number' },
-      ]"
         >
           <el-input
               v-model.number="user.user_id"
@@ -74,9 +98,7 @@ const clickLogin = (formEl: FormInstance | undefined) => {
               autocomplete="off"
           />
         </el-form-item>
-        <el-form-item label="password" prop="password" :rules="[
-        { required: true, message: '密码必须填写' },
-      ]">
+        <el-form-item label="密码" prop="password">
           <el-input v-model="user.password" type="password" autocomplete="off" />
         </el-form-item>
         <el-form-item>

@@ -4,10 +4,13 @@ import "gorm.io/gorm"
 
 type User struct {
 	gorm.Model
-	UserId   string `json:"userId" gorm:"column:user_id"`    // 学号
-	UserName string `json:"userName" gorm:"column:username"` //姓名
-	PassWord string `json:"passWord" gorm:"column:password"` //密码
-	Type     string `json:"type" gorm:"column:type"`         // teacher 老师 student 学生
+	UserId   string `json:"user_id" gorm:"column:user_id"`    // 学号
+	UserName string `json:"user_name" gorm:"column:username"` //姓名
+	PassWord string `json:"-" gorm:"column:password"`         //密码
+	Class    string `json:"class" gorm:"column:class"`
+	XueYuan  string `json:"xue_yuan" gorm:"column:xue_yuan"`
+	ZhuanYe  string `json:"zhuan_ye" gorm:"column:zhuan_ye"`
+	Type     bool   `json:"type" gorm:"column:type;default:false"` // true 老师 false 学生
 }
 
 type Topic struct {
@@ -27,4 +30,5 @@ type Topic struct {
 	ReferenceMaterials string `json:"reference_materials" gorm:"column:reference_materials"` //参考文献
 	IsSelect           bool   `json:"is_select" gorm:"column:is_select"`                     //是否已被选择
 	StudentId          string `json:"student_id" gorm:"column:student_id"`                   //学生Id
+	StudentName        string `json:"student_name" gorm:"column:student_name"`               //学生Id
 }
